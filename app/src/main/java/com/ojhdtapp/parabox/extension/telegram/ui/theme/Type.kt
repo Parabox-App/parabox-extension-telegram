@@ -1,4 +1,4 @@
-package com.parabox.example.ui.theme
+package com.ojhdtapp.parabox.extension.telegram.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

@@ -1,4 +1,4 @@
-package com.parabox.example
+package com.ojhdtapp.parabox.extension.telegram
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -16,13 +16,14 @@ import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxActivity
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxKey
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxMetadata
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxResult
-import com.parabox.example.domain.service.ConnService
-import com.parabox.example.domain.util.CustomKey
-import com.parabox.example.domain.util.ServiceStatus
-import com.parabox.example.ui.main.MainScreen
-import com.parabox.example.ui.main.MainViewModel
-import com.parabox.example.ui.main.UiEvent
-import com.parabox.example.ui.theme.ParaboxExtensionExampleTheme
+import com.ojhdtapp.parabox.extension.telegram.domain.service.ConnService
+import com.ojhdtapp.parabox.extension.telegram.domain.util.CustomKey
+import com.ojhdtapp.parabox.extension.telegram.domain.util.ServiceStatus
+import com.ojhdtapp.parabox.extension.telegram.ui.main.MainScreen
+import com.ojhdtapp.parabox.extension.telegram.ui.main.MainViewModel
+import com.ojhdtapp.parabox.extension.telegram.ui.main.UiEvent
+import com.ojhdtapp.parabox.extension.telegram.ui.theme.ParaboxExtensionExampleTheme
+import com.ojhdtapp.parabox.extension.telegram.R
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

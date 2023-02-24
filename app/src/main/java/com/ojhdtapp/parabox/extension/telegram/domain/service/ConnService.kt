@@ -1,9 +1,8 @@
-package com.parabox.example.domain.service
+package com.ojhdtapp.parabox.extension.telegram.domain.service
 
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Message
-import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxKey
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxMetadata
@@ -16,16 +15,13 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendMessageDto
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
-import com.parabox.example.core.util.DataStoreKeys
-import com.parabox.example.core.util.NotificationUtil
-import com.parabox.example.core.util.dataStore
-import com.parabox.example.domain.util.CustomKey
+import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.extension.telegram.core.util.NotificationUtil
+import com.ojhdtapp.parabox.extension.telegram.core.util.dataStore
+import com.ojhdtapp.parabox.extension.telegram.domain.util.CustomKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 class ConnService : ParaboxService() {
     companion object {

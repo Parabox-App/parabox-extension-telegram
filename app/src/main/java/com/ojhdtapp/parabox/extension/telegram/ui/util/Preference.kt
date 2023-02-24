@@ -1,4 +1,4 @@
-package com.parabox.example.ui.util
+package com.ojhdtapp.parabox.extension.telegram.ui.util
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable

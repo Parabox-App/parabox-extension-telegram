@@ -1,19 +1,15 @@
-package com.parabox.example.ui.main
+package com.ojhdtapp.parabox.extension.telegram.ui.main
 
 import android.content.Context
-import androidx.compose.runtime.State
-import androidx.compose.ui.res.stringResource
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.parabox.example.R
-import com.parabox.example.core.util.DataStoreKeys
-import com.parabox.example.core.util.dataStore
-import com.parabox.example.domain.util.ServiceStatus
+import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.extension.telegram.core.util.dataStore
+import com.ojhdtapp.parabox.extension.telegram.domain.util.ServiceStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.IOException
 import javax.inject.Inject
 

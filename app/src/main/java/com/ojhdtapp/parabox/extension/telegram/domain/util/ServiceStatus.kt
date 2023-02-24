@@ -1,4 +1,4 @@
-package com.parabox.example.domain.util
+package com.ojhdtapp.parabox.extension.telegram.domain.util
 
 sealed class ServiceStatus(open val message: String) {
     data class Loading(override val message: String) : ServiceStatus(message)

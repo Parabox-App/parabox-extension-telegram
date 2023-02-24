@@ -1,4 +1,4 @@
-package com.parabox.example
+package com.ojhdtapp.parabox.extension.telegram
 
 import org.junit.Test
 

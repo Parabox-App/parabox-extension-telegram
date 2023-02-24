@@ -1,4 +1,4 @@
-package com.parabox.example.core.util
+package com.ojhdtapp.parabox.extension.telegram.core.util
 
 import android.content.Context
 import androidx.datastore.core.DataStore

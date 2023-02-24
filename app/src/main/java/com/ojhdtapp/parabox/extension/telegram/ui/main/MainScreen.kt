@@ -1,4 +1,4 @@
-package com.parabox.example.ui.main
+package com.ojhdtapp.parabox.extension.telegram.ui.main
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -55,12 +55,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.parabox.example.MainActivity
-import com.parabox.example.R
-import com.parabox.example.domain.util.ServiceStatus
-import com.parabox.example.ui.util.NormalPreference
-import com.parabox.example.ui.util.PreferencesCategory
-import com.parabox.example.ui.util.SwitchPreference
+import com.ojhdtapp.parabox.extension.telegram.MainActivity
+import com.ojhdtapp.parabox.extension.telegram.R
+import com.ojhdtapp.parabox.extension.telegram.domain.util.ServiceStatus
+import com.ojhdtapp.parabox.extension.telegram.ui.util.NormalPreference
+import com.ojhdtapp.parabox.extension.telegram.ui.util.PreferencesCategory
+import com.ojhdtapp.parabox.extension.telegram.ui.util.SwitchPreference
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

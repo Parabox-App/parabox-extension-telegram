@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Parabox Extension Example</string>
+    <string name="app_name">Parabox Extension Telegram</string>
     <string name="main_switch_off">启用插件</string>
     <string name="main_switch_on">启用插件</string>
     <string name="force_stop_service">强制停止服务</string>

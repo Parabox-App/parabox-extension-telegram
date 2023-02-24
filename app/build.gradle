@@ -9,11 +9,11 @@ plugins {
 
 android {
 //    TODO 1 : Set your extension's Package Name.
-    namespace 'com.parabox.example'
+    namespace 'com.ojhdtapp.parabox.extension.telegram'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.parabox.example"
+        applicationId "com.ojhdtapp.parabox.extension.telegram"
         minSdk 26
         targetSdk 33
         versionCode 1

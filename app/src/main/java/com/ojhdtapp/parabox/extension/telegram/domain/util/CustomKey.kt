@@ -1,4 +1,4 @@
-package com.parabox.example.domain.util
+package com.ojhdtapp.parabox.extension.telegram.domain.util
 
 object CustomKey {
     // TODO 4: Added static Key constants for commands

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Parabox Extension Example</string>
+    <string name="app_name">Parabox Extension Telegram</string>
     <string name="main_switch_off">Enable Extension</string>
     <string name="main_switch_on">Enable Extension</string>
     <string name="force_stop_service">Force stop service</string>

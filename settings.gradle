@@ -13,5 +13,5 @@ dependencyResolutionManagement {
         maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
     }
 }
-rootProject.name = "Parabox Extension Example"
+rootProject.name = "parabox-extension-telegram"
 include ':app'

@@ -1,4 +1,4 @@
-package com.parabox.example.ui.theme
+package com.ojhdtapp.parabox.extension.telegram.ui.theme
 
 import android.app.Activity
 import android.os.Build
