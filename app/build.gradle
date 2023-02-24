@@ -12,6 +12,11 @@ android {
     namespace 'com.ojhdtapp.parabox.extension.telegram'
     compileSdk 33
 
+    sourceSets.main {
+        jniLibs.srcDir 'src/main/libs'
+        jni.srcDirs = [] //disable automatic ndk-build call
+    }
+
     defaultConfig {
         applicationId "com.ojhdtapp.parabox.extension.telegram"
         minSdk 26
@@ -68,6 +73,7 @@ dependencies {
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
     implementation "com.google.android.material:material:1.9.0-alpha02"
+    implementation "com.android.support:support-annotations:28.0.0"
 
     // Development Kit
     implementation 'com.ojhdt:parabox-development-kit:1.0.6'
