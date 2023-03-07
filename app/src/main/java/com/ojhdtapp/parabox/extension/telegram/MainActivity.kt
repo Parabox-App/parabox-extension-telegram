@@ -51,49 +51,9 @@ class MainActivity : ParaboxActivity<ConnService>(ConnService::class.java) {
         }
     }
 
-    fun receiveTestMessage() {
-        // TODO 5 : Call sendCommand function with COMMAND_RECEIVE_TEST_MESSAGE
-        sendCommand(command = CustomKey.COMMAND_RECEIVE_TEST_MESSAGE,
-            extra = Bundle().apply {
-                putString("content", "Message sent at ${System.currentTimeMillis()}")
-            },
-            timeoutMillis = 3000,
-            onResult = {
-                if (it is ParaboxResult.Success) {
-                    val obj = it.obj
-                    val message = obj.getString("message")
-
-                    Toast.makeText(
-                        this,
-                        getString(R.string.command_success_toast, message),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    val errorCode = (it as ParaboxResult.Fail).errorCode
-
-                    Toast.makeText(
-                        this,
-                        getString(R.string.command_failed_toast, errorCode.toString()),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            })
-    }
-
-    private fun showTestMessageSnackbar(message: String){
-        viewModel.emitToUiEventFlow(
-            UiEvent.ShowSnackbar(message)
-        )
-    }
-
     override fun customHandleMessage(msg: Message, metadata: ParaboxMetadata) {
         when(msg.what){
-            // TODO 10: Handle custom notification
-            CustomKey.NOTIFICATION_SHOW_TEST_MESSAGE_SNACKBAR -> {
-                (msg.obj as Bundle).getString("message")?.also {
-                    showTestMessageSnackbar(it)
-                }
-            }
+
         }
     }
 

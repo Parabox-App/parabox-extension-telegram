@@ -1,22 +1,21 @@
 package com.ojhdtapp.parabox.extension.telegram.ui.main
 
 import android.content.Context
+import android.util.Log
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.extension.telegram.core.util.dataStore
+import com.ojhdtapp.parabox.extension.telegram.domain.telegram.Authentication
+import com.ojhdtapp.parabox.extension.telegram.domain.telegram.TelegramClient
 import com.ojhdtapp.parabox.extension.telegram.domain.util.ServiceStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.io.IOException
 import javax.inject.Inject
@@ -24,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     @ApplicationContext val context: Context,
+    val client: TelegramClient,
 ) : ViewModel() {
     // UiEvent
     private val _uiEventFlow = MutableSharedFlow<UiEvent>()
@@ -93,8 +93,68 @@ class MainViewModel @Inject constructor(
             }
         }
     }
+
+    // Login
+    private val _loginState = mutableStateOf<LoginState>(LoginState.Loading)
+
+    val loginState: State<LoginState> get() = _loginState
+
+    init {
+        client.authState.onEach {
+            Log.d("MainViewModel", "authState: $it")
+            when (it) {
+                Authentication.UNAUTHENTICATED -> {
+                    _loginState.value = LoginState.Unauthenticated
+                }
+                Authentication.UNKNOWN -> {
+                    _loginState.value = LoginState.Unauthenticated
+                }
+                Authentication.WAIT_FOR_NUMBER -> {
+                    _loginState.value = LoginState.InsertNumber()
+                }
+                Authentication.WAIT_FOR_CODE -> {
+                    _loginState.value = LoginState.InsertCode()
+                }
+                Authentication.WAIT_FOR_PASSWORD -> {
+                    _loginState.value = LoginState.InsertPassword()
+                }
+                Authentication.AUTHENTICATED -> {
+                    _loginState.value = LoginState.Authenticated
+                }
+            }
+        }.launchIn(viewModelScope)
+    }
+
+    fun startAuthentication() {
+        _loginState.value = LoginState.Loading
+        client.startAuthentication()
+    }
+
+    fun insertPhoneNumber(number: String) {
+        _loginState.value = LoginState.Loading
+        client.insertPhoneNumber(number)
+    }
+
+    fun insertCode(code: String) {
+        _loginState.value = LoginState.Loading
+        client.insertCode(code)
+    }
+
+    fun insertPassword(password: String) {
+        _loginState.value = LoginState.Loading
+        client.insertPassword(password)
+    }
 }
 
-sealed interface UiEvent{
-    data class ShowSnackbar(val message: String): UiEvent
+sealed interface UiEvent {
+    data class ShowSnackbar(val message: String) : UiEvent
+}
+
+sealed class LoginState {
+    object Loading : LoginState()
+    data class InsertNumber(val previousError: Throwable? = null) : LoginState()
+    data class InsertCode(val previousError: Throwable? = null) : LoginState()
+    data class InsertPassword(val previousError: Throwable? = null) : LoginState()
+    object Authenticated : LoginState()
+    object Unauthenticated : LoginState()
 }

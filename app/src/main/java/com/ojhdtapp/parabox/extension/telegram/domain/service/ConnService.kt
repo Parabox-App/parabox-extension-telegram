@@ -18,74 +18,31 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentS
 import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.extension.telegram.core.util.NotificationUtil
 import com.ojhdtapp.parabox.extension.telegram.core.util.dataStore
+import com.ojhdtapp.parabox.extension.telegram.domain.telegram.Authentication
+import com.ojhdtapp.parabox.extension.telegram.domain.telegram.TelegramClient
 import com.ojhdtapp.parabox.extension.telegram.domain.util.CustomKey
+import com.ojhdtapp.parabox.extension.telegram.ui.main.LoginState
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ConnService : ParaboxService() {
     companion object {
         var connectionType = 0
     }
 
-    private fun receiveTestMessage(msg: Message, metadata: ParaboxMetadata) {
-        // TODO 11 : Receive Message
-        val content = (msg.obj as Bundle).getString("content") ?: "No content"
-        val profile = Profile(
-            name = "anonymous",
-            avatar = "https://gravatar.loli.net/avatar/0c13fa7156f734513afeb1d4a965c219?d=mp&v=1.5.1",
-            id = 1L,
-            avatarUri = null
-        )
-        receiveMessage(
-            ReceiveMessageDto(
-                contents = listOf(PlainText(text = content)),
-                profile = profile,
-                subjectProfile = profile,
-                timestamp = System.currentTimeMillis(),
-                messageId = null,
-                pluginConnection = PluginConnection(
-                    connectionType = connectionType,
-                    sendTargetType = SendTargetType.USER,
-                    id = 1L
-                )
-            ),
-            onResult = {
-                // TODO 7 : Call sendCommandResponse when the job is done
-                if (it is ParaboxResult.Success) {
-                    sendCommandResponse(
-                        isSuccess = true,
-                        metadata = metadata,
-                        extra = Bundle().apply {
-                            putString(
-                                "message",
-                                "Message received at ${System.currentTimeMillis()}"
-                            )
-                        }
-                    )
-                } else {
-                    sendCommandResponse(
-                        isSuccess = false,
-                        metadata = metadata,
-                        errorCode = (it as ParaboxResult.Fail).errorCode
-                    )
-                }
-            }
-        )
-    }
-
-    // TODO 9 : Call sendNotification function with NOTIFICATION_SHOW_TEST_MESSAGE_SNACKBAR
-    private fun showTestMessageSnackbar(message: String) {
-        sendNotification(CustomKey.NOTIFICATION_SHOW_TEST_MESSAGE_SNACKBAR, Bundle().apply {
-            putString("message", message)
-        })
-    }
+    @Inject
+    lateinit var client: TelegramClient
 
     override fun customHandleMessage(msg: Message, metadata: ParaboxMetadata) {
         when (msg.what) {
             // TODO 6: Handle custom command
             CustomKey.COMMAND_RECEIVE_TEST_MESSAGE -> {
-                receiveTestMessage(msg, metadata)
             }
         }
     }
@@ -112,8 +69,6 @@ class ConnService : ParaboxService() {
     }
 
     override suspend fun onSendMessage(dto: SendMessageDto): Boolean {
-        val contentString = dto.contents.getContentString()
-        showTestMessageSnackbar(contentString)
         return true
     }
 
@@ -125,19 +80,29 @@ class ConnService : ParaboxService() {
             if (isForegroundServiceEnabled) {
                 NotificationUtil.startForegroundService(this@ConnService)
             }
-
-//            TODO 3: Delete the code below, and write your own startup process
-            updateServiceState(ParaboxKey.STATE_LOADING, "Step A")
-            delay(1000)
-            updateServiceState(ParaboxKey.STATE_LOADING, "Step B")
-            delay(1000)
-            updateServiceState(ParaboxKey.STATE_PAUSE, "Step C")
-            delay(1000)
-            updateServiceState(ParaboxKey.STATE_LOADING, "Step D")
-            delay(1000)
-            updateServiceState(ParaboxKey.STATE_RUNNING, "Step E")
+            client.authState.onEach {
+                when (it) {
+                    Authentication.UNAUTHENTICATED, Authentication.UNKNOWN -> {
+                        updateServiceState(ParaboxKey.STATE_LOADING, "正在尝试登录")
+                    }
+                    Authentication.WAIT_FOR_NUMBER -> {
+                        updateServiceState(ParaboxKey.STATE_PAUSE, "请输入手机号码")
+                    }
+                    Authentication.WAIT_FOR_CODE -> {
+                        updateServiceState(ParaboxKey.STATE_PAUSE, "请输入验证码")
+                    }
+                    Authentication.WAIT_FOR_PASSWORD -> {
+                        updateServiceState(ParaboxKey.STATE_PAUSE, "请输入密码")
+                    }
+                    Authentication.AUTHENTICATED -> {
+                        updateServiceState(ParaboxKey.STATE_RUNNING, "服务正在运行")
+                    }
+                }
+            }.launchIn(lifecycleScope)
+            if (client.authState.value == Authentication.UNAUTHENTICATED) {
+                client.startAuthentication()
+            }
         }
-
     }
 
     override fun onStateUpdate(state: Int, message: String?) {
@@ -147,6 +112,7 @@ class ConnService : ParaboxService() {
     override fun onStopParabox() {
         NotificationUtil.stopForegroundService(this)
         updateServiceState(ParaboxKey.STATE_STOP)
+        client.close()
     }
 
     override fun onCreate() {

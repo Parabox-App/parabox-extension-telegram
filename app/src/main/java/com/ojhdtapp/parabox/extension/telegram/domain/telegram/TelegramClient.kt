@@ -15,7 +15,9 @@ class TelegramClient @Inject constructor(
 
     private val TAG = TelegramClient::class.java.simpleName
 
-    val client = Client.create(this, null, null)
+    val client = Client.create(this, null, {
+        Log.d(TAG, "onError: $it")
+    })
 
     private val _authState = MutableStateFlow(Authentication.UNKNOWN)
     val authState: StateFlow<Authentication> get() = _authState
@@ -88,10 +90,10 @@ class TelegramClient @Inject constructor(
             Log.d("TelegramClient", "phoneNumber. result: $it")
             when (it.constructor) {
                 TdApi.Ok.CONSTRUCTOR -> {
-
+                    Log.d("TelegramClient", "phoneNumber. result: OK")
                 }
                 TdApi.Error.CONSTRUCTOR -> {
-
+                    Log.d("TelegramClient", "phoneNumber. result: Error")
                 }
             }
         }
