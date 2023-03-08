@@ -1,33 +1,59 @@
 package com.ojhdtapp.parabox.extension.telegram.domain.telegram
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
+import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import org.drinkless.td.libcore.telegram.Client
-import org.drinkless.td.libcore.telegram.TdApi
+import org.apache.commons.io.FileUtils
 import javax.inject.Inject
+import org.drinkless.td.libcore.telegram.*
+import org.drinkless.td.libcore.telegram.TdApi.Chat
+import org.drinkless.td.libcore.telegram.TdApi.StorageStatistics
+import java.io.File
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TelegramClient @Inject constructor(
-    private val tdLibParameters: TdApi.TdlibParameters
+    private val tdLibParameters: TdApi.TdlibParameters,
+    val context: Context
 ) : Client.ResultHandler {
 
     private val TAG = TelegramClient::class.java.simpleName
 
-    val client = Client.create(this, null, {
+    val client = Client.create(this, null) {
+        it.printStackTrace()
         Log.d(TAG, "onError: $it")
-    })
+    }
 
     private val _authState = MutableStateFlow(Authentication.UNKNOWN)
     val authState: StateFlow<Authentication> get() = _authState
+
+    private var _resultHandler: ((TdApi.Object) -> Unit)? = null
 
     init {
         client.send(TdApi.SetLogVerbosityLevel(1), this)
         client.send(TdApi.GetAuthorizationState(), this)
     }
 
+    fun setResultHandler(handler: (TdApi.Object) -> Unit) {
+        _resultHandler = handler
+    }
+
+    fun open() {
+//        client.send(TdApi.GetAuthorizationState(), this)
+    }
+
     fun close() {
+        _resultHandler = null
         client.close()
     }
 
@@ -44,11 +70,29 @@ class TelegramClient @Inject constructor(
                 Log.d(TAG, "UpdateAuthorizationState")
                 onAuthorizationStateUpdated((data as TdApi.UpdateAuthorizationState).authorizationState)
             }
+
+            TdApi.AuthorizationStateWaitTdlibParameters.CONSTRUCTOR -> {
+                Log.d(TAG, "AuthorizationStateWaitTdlibParameters")
+                client.send(TdApi.SetTdlibParameters(tdLibParameters)) {
+                    Log.d(TAG, "SetTdlibParameters result: $it")
+                    when (it.constructor) {
+                        TdApi.Ok.CONSTRUCTOR -> {
+                            //result.postValue(true)
+                        }
+                        TdApi.Error.CONSTRUCTOR -> {
+                            //result.postValue(false)
+                        }
+                    }
+                }
+            }
             TdApi.UpdateOption.CONSTRUCTOR -> {
 
             }
 
-            else -> Log.d(TAG, "Unhandled onResult call with data: $data.")
+            else -> {
+                _resultHandler?.invoke(data)
+//                Log.d(TAG, "Unhandled onResult call with data: $data.")
+            }
         }
     }
 
@@ -75,6 +119,30 @@ class TelegramClient @Inject constructor(
                 }
             }
         }
+    }
+
+    fun loginOut() {
+        Log.d(TAG, "loginOut called")
+        client.send(TdApi.LogOut()) {
+            Log.d(TAG, "loginOut result: $it")
+            when (it.constructor) {
+                TdApi.Ok.CONSTRUCTOR -> {
+                    //result.postValue(true)
+                }
+                TdApi.Error.CONSTRUCTOR -> {
+                    //result.postValue(false)
+                }
+            }
+        }
+    }
+
+    suspend fun optimiseStorage(): StorageStatistics {
+        return suspendCoroutine { cot ->
+            client.send(TdApi.OptimizeStorage()){
+                cot.resume(it as StorageStatistics)
+            }
+        }
+
     }
 
     fun insertPhoneNumber(phoneNumber: String) {
@@ -183,6 +251,87 @@ class TelegramClient @Inject constructor(
         }
     }
 
+    suspend fun getParaboxMessageContents(tdMessageContent: TdApi.MessageContent): List<MessageContent>? {
+        return when (tdMessageContent.constructor) {
+            TdApi.MessageText.CONSTRUCTOR -> {
+                listOf(PlainText(text = (tdMessageContent as TdApi.MessageText).text.text))
+            }
+            TdApi.MessagePhoto.CONSTRUCTOR -> {
+                getDownloadableFileUri((tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].photo)
+                    ?.let { uri ->
+                        buildList<MessageContent> {
+                            add(
+                                Image(
+                                    url = null,
+                                    width = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].width,
+                                    height = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].height,
+                                    fileName = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].photo.remote.uniqueId,
+                                    uri = uri
+                                )
+                            )
+                            if ((this as TdApi.MessagePhoto).caption.text.isNotEmpty()) {
+                                add(PlainText(text = (tdMessageContent as TdApi.MessagePhoto).caption.text))
+                            }
+                        }
+                    }
+            }
+            else -> null
+        }
+    }
+
+    suspend fun getUserInfo(userId: Long): TdApi.User? {
+        return suspendCoroutine<TdApi.User?> { cot ->
+            client.send(TdApi.GetUser(userId)) {
+                if (it.constructor == TdApi.Error.CONSTRUCTOR) {
+                    cot.resume(null)
+                } else {
+                    cot.resume(it as TdApi.User)
+                }
+            }
+        }
+    }
+
+    suspend fun getUserProfilePhotos(userId: Long): TdApi.ChatPhotos? {
+        return suspendCoroutine { cot ->
+            client.send(TdApi.GetUserProfilePhotos(userId, 0, 1)) {
+                if (it.constructor == TdApi.Error.CONSTRUCTOR) {
+                    cot.resumeWithException(Exception((it as TdApi.Error).message))
+                } else {
+                    cot.resume(it as TdApi.ChatPhotos)
+                }
+            }
+        }
+    }
+
+    suspend fun getChatInfo(chatId: Long): TdApi.Chat? {
+        return suspendCoroutine { cot ->
+            client.send(TdApi.GetChat(chatId)) {
+                if (it.constructor == TdApi.Error.CONSTRUCTOR) {
+                    cot.resumeWithException(Exception((it as TdApi.Error).message))
+                } else {
+                    cot.resume(it as Chat)
+                }
+            }
+        }
+
+    }
+
+    suspend fun getDownloadableFileUri(file: TdApi.File): Uri? {
+        return coroutineScope {
+            downloadableFile(file).firstOrNull()?.let {
+//                FileUtils.copyFileToDirectory(srcFile = File(it), desFile = FileUtils.getTempDirectory())
+                FileUtil.getUriOfFile(context, File(it)).apply {
+                    Log.d(TAG, "URI:${this}")
+                    context.grantUriPermission(
+                        "com.ojhdtapp.parabox",
+                        this,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+            }
+        }
+    }
+
     fun downloadableFile(file: TdApi.File): Flow<String?> =
         file.takeIf {
             it.local?.isDownloadingCompleted == false
@@ -198,7 +347,6 @@ class TelegramClient @Inject constructor(
                 }
                 else -> {
                     cancel("", Exception(""))
-
                 }
             }
         }

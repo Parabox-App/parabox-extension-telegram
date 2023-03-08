@@ -39,7 +39,10 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTelegramClient(parameters: TdApi.TdlibParameters) = TelegramClient(parameters)
+    fun provideTelegramClient(
+        parameters: TdApi.TdlibParameters,
+        @ApplicationContext context: Context
+    ) = TelegramClient(parameters, context)
 
     @Provides
     @Singleton

@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Message
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -86,6 +87,7 @@ class MainActivity : ParaboxActivity<ConnService>(ConnService::class.java) {
 
             else -> ServiceStatus.Stop
         }
+        Log.d("Parabox", "onParaboxServiceStateChanged: $serviceState")
         viewModel.updateServiceStatusStateFlow(serviceState)
     }
 

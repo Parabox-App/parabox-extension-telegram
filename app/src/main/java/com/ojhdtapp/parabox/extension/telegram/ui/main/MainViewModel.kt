@@ -48,7 +48,13 @@ class MainViewModel @Inject constructor(
     val serviceStatusStateFlow = _serviceStatusStateFlow.asStateFlow()
     fun updateServiceStatusStateFlow(value: ServiceStatus) {
         viewModelScope.launch {
-            _serviceStatusStateFlow.emit(value)
+            if (serviceStatusStateFlow.value.message == "") {
+                _serviceStatusStateFlow.emit(value)
+            } else {
+                if(value::class.java != serviceStatusStateFlow.value::class.java){
+                    _serviceStatusStateFlow.emit(value)
+                }
+            }
         }
     }
 
@@ -143,6 +149,13 @@ class MainViewModel @Inject constructor(
     fun insertPassword(password: String) {
         _loginState.value = LoginState.Loading
         client.insertPassword(password)
+    }
+
+    fun optimiseStorage(){
+        viewModelScope.launch {
+            client.optimiseStorage()
+
+        }
     }
 }
 

@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ojhdtapp.parabox.extension.telegram.MainActivity
 import com.ojhdtapp.parabox.extension.telegram.R
@@ -34,6 +35,7 @@ import com.ojhdtapp.parabox.extension.telegram.domain.util.ServiceStatus
 import com.ojhdtapp.parabox.extension.telegram.ui.util.NormalPreference
 import com.ojhdtapp.parabox.extension.telegram.ui.util.PreferencesCategory
 import com.ojhdtapp.parabox.extension.telegram.ui.util.SwitchPreference
+import com.ojhdtapp.parabox.extension.telegram.ui.util.clearFocusOnKeyboardDismiss
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -340,7 +342,8 @@ fun LoginBlock(
             is LoginState.InsertPassword -> {
                 InsertPasswordBlock()
             }
-            else -> {}
+            else -> {
+            }
         }
     }
 }
@@ -359,11 +362,13 @@ fun InsertNumberBlock(
     }
     ElevatedCard(
         modifier = modifier,
+        shape = RoundedCornerShape(32.dp),
     ) {
-        Column() {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
@@ -374,13 +379,16 @@ fun InsertNumberBlock(
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
-                Text(text = "请输入手机号")
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(text = "请输入手机号", style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
             }
+            Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = 8.dp),
+                        .padding(end = 8.dp)
+                        .clearFocusOnKeyboardDismiss(),
                     value = input, onValueChange = { input = it },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -403,7 +411,9 @@ fun LoadingBlock(modifier: Modifier = Modifier) {
         modifier = modifier,
     ) {
         Box(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
@@ -425,11 +435,13 @@ fun InsertCodeBlock(
     }
     ElevatedCard(
         modifier = modifier,
+        shape = RoundedCornerShape(32.dp),
     ) {
-        Column() {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
@@ -440,20 +452,23 @@ fun InsertCodeBlock(
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
-                Text(text = "请输入验证码")
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(text = "请输入验证码", style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
             }
+            Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = 8.dp),
+                        .padding(end = 8.dp)
+                        .clearFocusOnKeyboardDismiss(),
                     value = input, onValueChange = { input = it },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 )
                 Button(
                     onClick = { viewModel.insertCode(input) },
-                    enabled = input.length == 6
+                    enabled = input.length == 5
                 ) {
                     Text(text = "确认")
                 }
@@ -477,11 +492,13 @@ fun InsertPasswordBlock(
     }
     ElevatedCard(
         modifier = modifier,
+        shape = RoundedCornerShape(32.dp),
     ) {
         Column() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
@@ -492,13 +509,16 @@ fun InsertPasswordBlock(
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
-                Text(text = "请输入密码")
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(text = "请输入密码", style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
             }
+            Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = 8.dp),
+                        .padding(end = 8.dp)
+                        .clearFocusOnKeyboardDismiss(),
                     value = input, onValueChange = { input = it },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
