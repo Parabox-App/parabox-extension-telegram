@@ -15,6 +15,8 @@ import org.apache.commons.io.FileUtils
 import javax.inject.Inject
 import org.drinkless.td.libcore.telegram.*
 import org.drinkless.td.libcore.telegram.TdApi.Chat
+import org.drinkless.td.libcore.telegram.TdApi.MessageAnimatedEmoji
+import org.drinkless.td.libcore.telegram.TdApi.MessageSticker
 import org.drinkless.td.libcore.telegram.TdApi.StorageStatistics
 import java.io.File
 import kotlin.coroutines.resume
@@ -138,7 +140,7 @@ class TelegramClient @Inject constructor(
 
     suspend fun optimiseStorage(): StorageStatistics {
         return suspendCoroutine { cot ->
-            client.send(TdApi.OptimizeStorage()){
+            client.send(TdApi.OptimizeStorage()) {
                 cot.resume(it as StorageStatistics)
             }
         }
@@ -265,14 +267,42 @@ class TelegramClient @Inject constructor(
                                     url = null,
                                     width = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].width,
                                     height = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].height,
-                                    fileName = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].photo.remote.uniqueId,
+                                    fileName = FileUtil.getFilenameFromUri(context, uri),
                                     uri = uri
                                 )
                             )
-                            if ((this as TdApi.MessagePhoto).caption.text.isNotEmpty()) {
+                            if ((tdMessageContent as TdApi.MessagePhoto).caption.text.isNotBlank()) {
                                 add(PlainText(text = (tdMessageContent as TdApi.MessagePhoto).caption.text))
                             }
                         }
+                    }
+            }
+            TdApi.MessageSticker.CONSTRUCTOR -> {
+                getDownloadableFileUri((tdMessageContent as MessageSticker).sticker.sticker)
+                    ?.let { uri ->
+                        listOf(
+                            Image(
+                                url = null,
+                                width = (tdMessageContent as MessageSticker).sticker.width,
+                                height = (tdMessageContent as MessageSticker).sticker.height,
+                                fileName = FileUtil.getFilenameFromUri(context, uri),
+                                uri = uri
+                            )
+                        )
+                    }
+            }
+            TdApi.MessageAnimatedEmoji.CONSTRUCTOR -> {
+                getDownloadableFileUri((tdMessageContent as MessageAnimatedEmoji).animatedEmoji.sticker.sticker)
+                    ?.let { uri ->
+                        listOf(
+                            Image(
+                                url = null,
+                                width = (tdMessageContent as MessageAnimatedEmoji).animatedEmoji.sticker.width,
+                                height = (tdMessageContent as MessageAnimatedEmoji).animatedEmoji.sticker.height,
+                                fileName = FileUtil.getFilenameFromUri(context, uri),
+                                uri = uri
+                            )
+                        )
                     }
             }
             else -> null
@@ -317,19 +347,17 @@ class TelegramClient @Inject constructor(
     }
 
     suspend fun getDownloadableFileUri(file: TdApi.File): Uri? {
-        return coroutineScope {
-            downloadableFile(file).firstOrNull()?.let {
+        return downloadableFile(file).last()?.let {
 //                FileUtils.copyFileToDirectory(srcFile = File(it), desFile = FileUtils.getTempDirectory())
-                FileUtil.getUriOfFile(context, File(it)).apply {
-                    Log.d(TAG, "URI:${this}")
-                    context.grantUriPermission(
-                        "com.ojhdtapp.parabox",
-                        this,
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                }
+            FileUtil.getUriOfFile(context, File(it)).apply {
+                Log.d(TAG, "URI:${this}")
+                context.grantUriPermission(
+                    "com.ojhdtapp.parabox",
+                    this,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
             }
-        }
+        }?: throw Exception("URI null")
     }
 
     fun downloadableFile(file: TdApi.File): Flow<String?> =
@@ -346,7 +374,7 @@ class TelegramClient @Inject constructor(
                     trySend(Unit).isSuccess
                 }
                 else -> {
-                    cancel("", Exception(""))
+                    cancel("", Exception("File download failed"))
                 }
             }
         }
