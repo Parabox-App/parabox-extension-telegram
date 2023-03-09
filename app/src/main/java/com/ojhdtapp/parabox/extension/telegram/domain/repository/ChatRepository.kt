@@ -59,10 +59,10 @@ class ChatRepository @Inject constructor(
         awaitClose { }
     }
 
-    fun chatImage(chat: TdApi.Chat): Flow<String?> =
-        chat.photo?.small?.takeIf {
-            it.local?.isDownloadingCompleted == false
-        }?.id?.let { fileId ->
-            client.downloadFile(fileId).map { chat.photo?.small?.local?.path }
-        } ?: flowOf(chat.photo?.small?.local?.path)
+//    fun chatImage(chat: TdApi.Chat): Flow<String?> =
+//        chat.photo?.small?.takeIf {
+//            it.local?.isDownloadingCompleted == false
+//        }?.id?.let { fileId ->
+//            client.downloadFile(fileId).map { chat.photo?.small?.local?.path }
+//        } ?: flowOf(chat.photo?.small?.local?.path)
 }

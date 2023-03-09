@@ -135,7 +135,7 @@ class ConnService : ParaboxService() {
         Log.d("parabox", obj.toString())
         lifecycleScope.launch(Dispatchers.IO) {
             val contents = client.getParaboxMessageContents(obj.message.content)
-            val senderId = when(obj.message.senderId.constructor){
+            val senderId = when (obj.message.senderId.constructor) {
                 MessageSenderUser.CONSTRUCTOR -> (obj.message.senderId as MessageSenderUser).userId
                 MessageSenderChat.CONSTRUCTOR -> (obj.message.senderId as MessageSenderChat).chatId
                 else -> null
@@ -145,7 +145,8 @@ class ConnService : ParaboxService() {
             if (sender == null || chat == null || contents == null) return@launch
             val senderProfile = sender.let {
                 Profile(
-                    name = it.username.ifBlank { "${it.firstName} ${it.lastName}" }.ifBlank { "${it.id}" },
+                    name = it.username.ifBlank { "${it.firstName} ${it.lastName}" }
+                        .ifBlank { "${it.id}" },
                     avatarUri = it.profilePhoto?.small?.let { it1 ->
                         client.getDownloadableFileUri(
                             it1
@@ -177,17 +178,27 @@ class ConnService : ParaboxService() {
                 sendTargetType = type,
                 Math.abs(chat.id)
             )
-            val dto = ReceiveMessageDto(
-                contents = contents,
-                profile = senderProfile,
-                subjectProfile = chatProfile,
-                timestamp = obj.message.date.toLong() * 1000,
-                messageId = obj.message.id,
-                pluginConnection = pluginConnection
-            )
-            receiveMessage(dto) {
 
+            if (senderId == client.currentUser?.id) {
+                val dto = SendMessageDto(
+                    contents = contents,
+                    timestamp = obj.message.date.toLong() * 1000,
+                    pluginConnection = pluginConnection,
+                    messageId = obj.message.id,
+                )
+                syncMessage(dto) {}
+            } else {
+                val dto = ReceiveMessageDto(
+                    contents = contents,
+                    profile = senderProfile,
+                    subjectProfile = chatProfile,
+                    timestamp = obj.message.date.toLong() * 1000,
+                    messageId = obj.message.id,
+                    pluginConnection = pluginConnection
+                )
+                receiveMessage(dto) {}
             }
+
         }
     }
 

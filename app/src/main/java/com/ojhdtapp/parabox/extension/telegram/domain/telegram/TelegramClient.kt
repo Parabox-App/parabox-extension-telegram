@@ -40,6 +40,8 @@ class TelegramClient @Inject constructor(
     val authState: StateFlow<Authentication> get() = _authState
 
     private var _resultHandler: ((TdApi.Object) -> Unit)? = null
+    private var _currentUser: TdApi.User? = null
+    val currentUser get() = _currentUser
 
     init {
         client.send(TdApi.SetLogVerbosityLevel(1), this)
@@ -79,7 +81,7 @@ class TelegramClient @Inject constructor(
                     Log.d(TAG, "SetTdlibParameters result: $it")
                     when (it.constructor) {
                         TdApi.Ok.CONSTRUCTOR -> {
-                            //result.postValue(true)
+                            client.send(TdApi.GetMe()) { _currentUser = (it as TdApi.User)}
                         }
                         TdApi.Error.CONSTRUCTOR -> {
                             //result.postValue(false)
@@ -347,7 +349,7 @@ class TelegramClient @Inject constructor(
     }
 
     suspend fun getDownloadableFileUri(file: TdApi.File): Uri? {
-        return downloadableFile(file).last()?.let {
+        return downloadableFile(file)?.let {
 //                FileUtils.copyFileToDirectory(srcFile = File(it), desFile = FileUtils.getTempDirectory())
             FileUtil.getUriOfFile(context, File(it)).apply {
                 Log.d(TAG, "URI:${this}")
@@ -360,26 +362,28 @@ class TelegramClient @Inject constructor(
         }?: throw Exception("URI null")
     }
 
-    fun downloadableFile(file: TdApi.File): Flow<String?> =
-        file.takeIf {
-            it.local?.isDownloadingCompleted == false
-        }?.id?.let { fileId ->
-            downloadFile(fileId).map { file.local?.path }
-        } ?: flowOf(file.local?.path)
+    suspend fun downloadableFile(file: TdApi.File): String? =
+        if(file.local?.isDownloadingCompleted == true){
+            file.local?.path
+        } else {
+            file.id?.let { fileId ->
+                downloadFile(fileId)?.local?.path
+            }
+        }
 
-    fun downloadFile(fileId: Int): Flow<Unit> = callbackFlow {
-        client.send(TdApi.DownloadFile(fileId, 1, 0, 0, true)) {
-            when (it.constructor) {
-                TdApi.Ok.CONSTRUCTOR -> {
-                    trySend(Unit).isSuccess
-                }
-                else -> {
-                    cancel("", Exception("File download failed"))
+    suspend fun downloadFile(fileId: Int): TdApi.File? =
+        suspendCoroutine { cot ->
+            client.send(TdApi.DownloadFile(fileId, 1, 0, 0, true)) {
+                when (it.constructor) {
+                    TdApi.File.CONSTRUCTOR -> {
+                        cot.resume(it as TdApi.File)
+                    }
+                    else -> {
+                        cot.resume(null)
+                    }
                 }
             }
         }
-        awaitClose()
-    }
 
     fun sendAsFlow(query: TdApi.Function): Flow<TdApi.Object> = callbackFlow {
         client.send(query) {
