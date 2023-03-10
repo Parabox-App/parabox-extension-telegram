@@ -1,0 +1,38 @@
+{
+    "version": 3,
+    "vendor": {
+        "conan": {}
+    },
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 15,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "conan-x86_64-release",
+            "displayName": "'conan-x86_64-release' config",
+            "description": "'conan-x86_64-release' configure using 'MinGW Makefiles' generator",
+            "generator": "MinGW Makefiles",
+            "cacheVariables": {
+                "CMAKE_SH": "CMAKE_SH-NOTFOUND",
+                "CMAKE_POLICY_DEFAULT_CMP0091": "NEW",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "toolchainFile": "D:\\Project\\parabox-extension-telegram\\tgs2gif\\src\\main\\cpp\\conan_toolchain.cmake",
+            "binaryDir": "D:\\Project\\parabox-extension-telegram\\tgs2gif\\src\\main\\cpp"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "conan-x86_64-release",
+            "configurePreset": "conan-x86_64-release"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "conan-x86_64-release",
+            "configurePreset": "conan-x86_64-release"
+        }
+    ]
+}

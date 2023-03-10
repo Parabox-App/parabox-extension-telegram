@@ -1,0 +1,11 @@
+.git
+.idea
+lib
+bin/tgs_to_png
+CMakeFiles
+.cmake
+conan.lock
+conanbuildinfo.txt
+conaninfo.txt
+graph_info.json
+Makefile

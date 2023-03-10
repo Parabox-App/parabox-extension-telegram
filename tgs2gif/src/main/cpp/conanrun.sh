@@ -1,0 +1,1 @@
+. "D:\Project\parabox-extension-telegram\tgs2gif\src\main\cpp\conanrunenv-release-x86_64.sh"
