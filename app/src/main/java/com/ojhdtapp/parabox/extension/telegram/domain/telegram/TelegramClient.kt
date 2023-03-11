@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import com.ojhdtapp.parabox.extension.telegram.core.util.AxrLottieUtil
 import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
@@ -17,6 +18,7 @@ import javax.inject.Inject
 import org.drinkless.td.libcore.telegram.*
 import org.drinkless.td.libcore.telegram.TdApi.Chat
 import org.drinkless.td.libcore.telegram.TdApi.MessageAnimatedEmoji
+import org.drinkless.td.libcore.telegram.TdApi.MessageAnimation
 import org.drinkless.td.libcore.telegram.TdApi.MessageSticker
 import org.drinkless.td.libcore.telegram.TdApi.StorageStatistics
 import java.io.File
@@ -257,13 +259,14 @@ class TelegramClient @Inject constructor(
         }
     }
 
-    suspend fun getParaboxMessageContents(tdMessageContent: TdApi.MessageContent): List<MessageContent>? {
+    suspend fun getParaboxMessageContents(message: TdApi.Message): List<MessageContent>? {
+        val tdMessageContent = message.content
         return when (tdMessageContent.constructor) {
             TdApi.MessageText.CONSTRUCTOR -> {
                 listOf(PlainText(text = (tdMessageContent as TdApi.MessageText).text.text))
             }
             TdApi.MessagePhoto.CONSTRUCTOR -> {
-                downloadableFile((tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].photo)
+                downloadableFile((tdMessageContent as TdApi.MessagePhoto).photo.sizes.last().photo)
                     ?.let { path ->
                         val fileName = FileUtil.getFilenameFromPath(path)
                         val extension = FileUtil.getExtensionFromFilename(fileName)
@@ -272,8 +275,8 @@ class TelegramClient @Inject constructor(
                             add(
                                 Image(
                                     url = null,
-                                    width = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].width,
-                                    height = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].height,
+                                    width = (tdMessageContent as TdApi.MessagePhoto).photo.sizes.last().width,
+                                    height = (tdMessageContent as TdApi.MessagePhoto).photo.sizes.last().height,
                                     fileName = fileName,
                                     uri = uri
                                 )
@@ -323,6 +326,62 @@ class TelegramClient @Inject constructor(
                             )
                         )
                     }
+            }
+            TdApi.MessageVoiceNote.CONSTRUCTOR -> {
+                getDownloadableFileUri((tdMessageContent as TdApi.MessageVoiceNote).voiceNote.voice)?.let{
+                    val fileName = FileUtil.getFilenameFromUri(context, it)
+                    buildList<MessageContent> {
+                        Audio(
+                            url = null,
+                            length = (tdMessageContent as TdApi.MessageVoiceNote).voiceNote.duration.toLong() * 1000,
+                            fileName = fileName,
+                            fileSize = (tdMessageContent as TdApi.MessageVoiceNote).voiceNote.voice.size.toLong(),
+                            uri = it,
+                        )
+                        if((tdMessageContent as TdApi.MessageVoiceNote).caption.text.isNotBlank()){
+                            add(PlainText(text = (tdMessageContent as TdApi.MessageVoiceNote).caption.text))
+                        }
+                    }
+                }
+            }
+            TdApi.MessageVideo.CONSTRUCTOR -> {
+                getDownloadableFileUri((tdMessageContent as TdApi.MessageVideo).video.video)?.let{
+                    val fileName = (tdMessageContent as TdApi.MessageVideo).video.fileName
+                    buildList<MessageContent> {
+                        com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File(
+                            url = null,
+                            name = fileName,
+                            extension = FileUtil.getExtensionFromFilename(fileName),
+                            size = (tdMessageContent as TdApi.MessageVideo).video.video.size.toLong(),
+                            lastModifiedTime = message.date.toLong() * 1000,
+                            uri = it,
+                        )
+                        if((tdMessageContent as TdApi.MessageVideo).caption.text.isNotBlank()){
+                            add(PlainText(text = (tdMessageContent as TdApi.MessageVideo).caption.text))
+                        }
+                    }
+                }
+            }
+            TdApi.MessageDocument.CONSTRUCTOR -> {
+                getDownloadableFileUri((tdMessageContent as TdApi.MessageDocument).document.document)?.let{
+                    val fileName = (tdMessageContent as TdApi.MessageDocument).document.fileName
+                    buildList<MessageContent> {
+                        com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File(
+                            url = null,
+                            name = fileName,
+                            extension = FileUtil.getExtensionFromFilename(fileName),
+                            size = (tdMessageContent as TdApi.MessageDocument).document.document.size.toLong(),
+                            lastModifiedTime = message.date.toLong() * 1000,
+                            uri = it,
+                        )
+                        if((tdMessageContent as TdApi.MessageDocument).caption.text.isNotBlank()){
+                            add(PlainText(text = (tdMessageContent as TdApi.MessageDocument).caption.text))
+                        }
+                    }
+                }
+            }
+            TdApi.MessageDice.CONSTRUCTOR, TdApi.MessageCall.CONSTRUCTOR, TdApi.MessageUnsupported.CONSTRUCTOR, TdApi.MessageAnimation.CONSTRUCTOR -> {
+                listOf(PlainText(text = "Unsupported message type.(${tdMessageContent.constructor}})"))
             }
             else -> null
         }
@@ -395,17 +454,54 @@ class TelegramClient @Inject constructor(
 
     suspend fun downloadFile(fileId: Int): TdApi.File? =
         suspendCoroutine { cot ->
-            client.send(TdApi.DownloadFile(fileId, 1, 0, 0, true)) {
-                when (it.constructor) {
-                    TdApi.File.CONSTRUCTOR -> {
-                        cot.resume(it as TdApi.File)
+            try{
+                client.send(TdApi.DownloadFile(fileId, 1, 0, 0, true)) {
+                    when (it.constructor) {
+                        TdApi.File.CONSTRUCTOR -> {
+                            cot.resume(it as TdApi.File)
+                        }
+                        else -> {
+                            cot.resume(null)
+                        }
                     }
-                    else -> {
-                        cot.resume(null)
-                    }
+                }
+            }catch (e: Exception){
+                e.printStackTrace()
+                cot.resume(null)
+            }
+        }
+
+    fun sendMessage(
+        chatId: Long,
+        messageThreadId: Long = 0,
+        replyToMessageId: Long = 0,
+        options: TdApi.MessageSendOptions = TdApi.MessageSendOptions(),
+        inputMessageContent: TdApi.InputMessageContent
+    ): Deferred<TdApi.Message> = sendMessage(
+        TdApi.SendMessage(
+            chatId,
+            messageThreadId,
+            replyToMessageId,
+            options,
+            null,
+            inputMessageContent
+        )
+    )
+
+    fun sendMessage(sendMessage: TdApi.SendMessage): Deferred<TdApi.Message> {
+        val result = CompletableDeferred<TdApi.Message>()
+        client.send(sendMessage) {
+            when (it.constructor) {
+                TdApi.Message.CONSTRUCTOR -> {
+                    result.complete(it as TdApi.Message)
+                }
+                else -> {
+                    result.completeExceptionally(error("Something went wrong"))
                 }
             }
         }
+        return result
+    }
 
     fun sendAsFlow(query: TdApi.Function): Flow<TdApi.Object> = callbackFlow {
         client.send(query) {

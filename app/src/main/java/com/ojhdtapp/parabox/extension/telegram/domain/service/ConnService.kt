@@ -23,6 +23,8 @@ import com.ojhdtapp.parabox.extension.telegram.domain.telegram.Authentication
 import com.ojhdtapp.parabox.extension.telegram.domain.telegram.TelegramClient
 import com.ojhdtapp.parabox.extension.telegram.domain.util.CustomKey
 import com.ojhdtapp.parabox.extension.telegram.ui.main.LoginState
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
+import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.QuoteReply
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -30,7 +32,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.drinkless.td.libcore.telegram.TdApi
+import org.drinkless.td.libcore.telegram.TdApi.Audio
 import org.drinkless.td.libcore.telegram.TdApi.ChatType
 import org.drinkless.td.libcore.telegram.TdApi.ChatTypeBasicGroup
 import org.drinkless.td.libcore.telegram.TdApi.ChatTypePrivate
@@ -40,6 +44,8 @@ import org.drinkless.td.libcore.telegram.TdApi.MessageSender
 import org.drinkless.td.libcore.telegram.TdApi.MessageSenderChat
 import org.drinkless.td.libcore.telegram.TdApi.MessageSenderUser
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 @AndroidEntryPoint
 class ConnService : ParaboxService() {
@@ -80,7 +86,69 @@ class ConnService : ParaboxService() {
     }
 
     override suspend fun onSendMessage(dto: SendMessageDto): Boolean {
-        return true
+        val quoteMsgId = dto.contents.firstOrNull { it is QuoteReply }?.let {
+            (it as QuoteReply).quoteMessageId
+        }
+        val chatId = "-${dto.pluginConnection.id}".toLong()
+        return dto.contents.all {
+            val tdMessageContent = when (it) {
+                is PlainText -> {
+                    TdApi.InputMessageText(
+                        TdApi.FormattedText(it.text, null),
+                        true,
+                        false
+                    )
+                }
+                is Image -> {
+                    TdApi.InputMessagePhoto(
+                        TdApi.InputFileLocal(it.uri!!.path!!),
+                        null,
+                        intArrayOf(),
+                        it.width,
+                        it.height,
+                        null,
+                        0
+                    )
+                }
+                is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
+                    TdApi.InputMessageVoiceNote(
+                        TdApi.InputFileLocal(it.uri!!.path!!),
+                        (it.length / 1000).toInt(),
+                        null,
+                        null
+                    )
+                }
+                else -> {
+                    TdApi.InputMessageText(
+                        TdApi.FormattedText(it.getContentString(), null),
+                        true,
+                        false
+                    )
+                }
+            }
+            sendSingleMessage(chatId, tdMessageContent, quoteMsgId ?: 0)
+        }
+    }
+
+    suspend fun sendSingleMessage(
+        chatId: Long,
+        tdMessageContent: TdApi.InputMessageContent,
+        replyToMessageId: Long = 0
+    ): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                client.sendMessage(
+                    chatId = chatId,
+                    inputMessageContent = tdMessageContent,
+                    replyToMessageId = replyToMessageId
+                ).await()
+                true
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+                false
+            }
+
+        }
     }
 
     override fun onStartParabox() {
@@ -134,7 +202,7 @@ class ConnService : ParaboxService() {
     private fun handleNewMessage(obj: TdApi.UpdateNewMessage) {
         Log.d("parabox", obj.toString())
         lifecycleScope.launch(Dispatchers.IO) {
-            val contents = client.getParaboxMessageContents(obj.message.content)
+            val contents = client.getParaboxMessageContents(obj.message)
             val senderId = when (obj.message.senderId.constructor) {
                 MessageSenderUser.CONSTRUCTOR -> (obj.message.senderId as MessageSenderUser).userId
                 MessageSenderChat.CONSTRUCTOR -> (obj.message.senderId as MessageSenderChat).chatId
