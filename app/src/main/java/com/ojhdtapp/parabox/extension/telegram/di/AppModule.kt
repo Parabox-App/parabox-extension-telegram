@@ -3,6 +3,7 @@ package com.ojhdtapp.parabox.extension.telegram.di
 import android.content.Context
 import android.os.Build
 import com.ojhdtapp.parabox.extension.telegram.R
+import com.ojhdtapp.parabox.extension.telegram.core.util.AxrLottieUtil
 import com.ojhdtapp.parabox.extension.telegram.domain.repository.ChatRepository
 import com.ojhdtapp.parabox.extension.telegram.domain.repository.MessageRepository
 import com.ojhdtapp.parabox.extension.telegram.domain.telegram.TelegramClient
@@ -41,8 +42,9 @@ object AppModule {
     @Singleton
     fun provideTelegramClient(
         parameters: TdApi.TdlibParameters,
+        axrLottieUtil: AxrLottieUtil,
         @ApplicationContext context: Context
-    ) = TelegramClient(parameters, context)
+    ) = TelegramClient(parameters, axrLottieUtil, context)
 
     @Provides
     @Singleton
@@ -57,4 +59,10 @@ object AppModule {
         @ApplicationContext context: Context,
         client: TelegramClient
     ) = ChatRepository(context, client)
+
+    @Provides
+    @Singleton
+    fun provideAxrLottieUtil(
+        @ApplicationContext context: Context
+    ) = AxrLottieUtil(context)
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import com.ojhdtapp.parabox.extension.telegram.core.util.AxrLottieUtil
 import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Image
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.MessageContent
@@ -26,6 +27,7 @@ import kotlin.coroutines.suspendCoroutine
 @OptIn(ExperimentalCoroutinesApi::class)
 class TelegramClient @Inject constructor(
     private val tdLibParameters: TdApi.TdlibParameters,
+    private val axrLottieUtil: AxrLottieUtil,
     val context: Context
 ) : Client.ResultHandler {
 
@@ -261,15 +263,18 @@ class TelegramClient @Inject constructor(
                 listOf(PlainText(text = (tdMessageContent as TdApi.MessageText).text.text))
             }
             TdApi.MessagePhoto.CONSTRUCTOR -> {
-                getDownloadableFileUri((tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].photo)
-                    ?.let { uri ->
+                downloadableFile((tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].photo)
+                    ?.let { path ->
+                        val fileName = FileUtil.getFilenameFromPath(path)
+                        val extension = FileUtil.getExtensionFromFilename(fileName)
+                        val uri = getPermissionGrantedUri(path)
                         buildList<MessageContent> {
                             add(
                                 Image(
                                     url = null,
                                     width = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].width,
                                     height = (tdMessageContent as TdApi.MessagePhoto).photo.sizes[0].height,
-                                    fileName = FileUtil.getFilenameFromUri(context, uri),
+                                    fileName = fileName,
                                     uri = uri
                                 )
                             )
@@ -280,28 +285,40 @@ class TelegramClient @Inject constructor(
                     }
             }
             TdApi.MessageSticker.CONSTRUCTOR -> {
-                getDownloadableFileUri((tdMessageContent as MessageSticker).sticker.sticker)
-                    ?.let { uri ->
+                downloadableFile((tdMessageContent as MessageSticker).sticker.sticker)
+                    ?.let { path ->
+                        val fileName = FileUtil.getFilenameFromPath(path)
+                        val extension = FileUtil.getExtensionFromFilename(fileName)
+                        val imagePath = if(extension == "tgs"){
+                            axrLottieUtil.lottie2Gif(path, File(context.externalCacheDir, "$fileName.gif").absolutePath, 200)
+                        } else path
+                        val uri = imagePath?.let { getPermissionGrantedUri(it) }
                         listOf(
                             Image(
                                 url = null,
                                 width = (tdMessageContent as MessageSticker).sticker.width,
                                 height = (tdMessageContent as MessageSticker).sticker.height,
-                                fileName = FileUtil.getFilenameFromUri(context, uri),
+                                fileName = fileName,
                                 uri = uri
                             )
                         )
                     }
             }
             TdApi.MessageAnimatedEmoji.CONSTRUCTOR -> {
-                getDownloadableFileUri((tdMessageContent as MessageAnimatedEmoji).animatedEmoji.sticker.sticker)
-                    ?.let { uri ->
+                downloadableFile((tdMessageContent as MessageAnimatedEmoji).animatedEmoji.sticker.sticker)
+                    ?.let { path ->
+                        val fileName = FileUtil.getFilenameFromPath(path)
+                        val extension = FileUtil.getExtensionFromFilename(fileName)
+                        val imagePath = if(extension == "tgs"){
+                            axrLottieUtil.lottie2Gif(path, File(context.externalCacheDir, "$fileName.gif").absolutePath, 200)
+                        } else path
+                        val uri = imagePath?.let { getPermissionGrantedUri(it) }
                         listOf(
                             Image(
                                 url = null,
                                 width = (tdMessageContent as MessageAnimatedEmoji).animatedEmoji.sticker.width,
                                 height = (tdMessageContent as MessageAnimatedEmoji).animatedEmoji.sticker.height,
-                                fileName = FileUtil.getFilenameFromUri(context, uri),
+                                fileName = fileName,
                                 uri = uri
                             )
                         )
@@ -348,17 +365,22 @@ class TelegramClient @Inject constructor(
 
     }
 
+    fun getPermissionGrantedUri(path: String): Uri?{
+        return FileUtil.getUriOfFile(context, File(path)).apply {
+            Log.d(TAG, "URI:${this}")
+            context.grantUriPermission(
+                "com.ojhdtapp.parabox",
+                this,
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        }
+    }
+
+
     suspend fun getDownloadableFileUri(file: TdApi.File): Uri? {
         return downloadableFile(file)?.let {
 //                FileUtils.copyFileToDirectory(srcFile = File(it), desFile = FileUtils.getTempDirectory())
-            FileUtil.getUriOfFile(context, File(it)).apply {
-                Log.d(TAG, "URI:${this}")
-                context.grantUriPermission(
-                    "com.ojhdtapp.parabox",
-                    this,
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            }
+            getPermissionGrantedUri(it)
         }?: throw Exception("URI null")
     }
 

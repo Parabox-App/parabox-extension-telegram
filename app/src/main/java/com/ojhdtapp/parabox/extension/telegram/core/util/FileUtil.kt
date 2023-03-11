@@ -22,6 +22,10 @@ object FileUtil {
         }
     }
 
+    fun getFilenameFromPath(path: String?): String? {
+        return path?.substringAfterLast("/")
+    }
+
     fun getFilenameFromUri(context: Context, uri: Uri): String? {
         try {
             when (uri.scheme) {
@@ -79,5 +83,9 @@ object FileUtil {
             return null
         }
 
+    }
+
+    fun getExtensionFromFilename(fileName: String?): String {
+        return fileName?.substringAfterLast(".") ?: ""
     }
 }
