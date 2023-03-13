@@ -8,7 +8,9 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ojhdtapp.parabox.extension.telegram.BuildConfig
 import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil
 import com.ojhdtapp.parabox.extension.telegram.core.util.dataStore
 import com.ojhdtapp.parabox.extension.telegram.domain.telegram.Authentication
 import com.ojhdtapp.parabox.extension.telegram.domain.telegram.TelegramClient
@@ -153,10 +155,20 @@ class MainViewModel @Inject constructor(
 
     fun optimiseStorage(){
         viewModelScope.launch {
-            client.optimiseStorage()
-
+            val sizeString = FileUtil.getSizeString(client.optimiseStorage().size)
+            _uiEventFlow.emit(UiEvent.ShowSnackbar(
+                "缓存清理完成。目前占用${sizeString}"
+            ))
         }
     }
+
+    fun logOut(){
+        viewModelScope.launch {
+            client.logOut()
+        }
+    }
+
+    val appVersion = BuildConfig.VERSION_NAME
 }
 
 sealed interface UiEvent {

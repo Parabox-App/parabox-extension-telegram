@@ -78,6 +78,9 @@ dependencies {
     implementation "com.google.android.material:material:1.9.0-alpha02"
     implementation "com.android.support:support-annotations:28.0.0"
 
+    // Chrome Custom Tab
+    implementation "androidx.browser:browser:1.4.0"
+
     // tgs
     implementation 'io.github.aghajari:AXrLottie:1.4.0'
 

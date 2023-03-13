@@ -17,6 +17,8 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.extension.telegram.core.util.IdUtil.fromChatId
+import com.ojhdtapp.parabox.extension.telegram.core.util.IdUtil.toChatId
 import com.ojhdtapp.parabox.extension.telegram.core.util.NotificationUtil
 import com.ojhdtapp.parabox.extension.telegram.core.util.dataStore
 import com.ojhdtapp.parabox.extension.telegram.domain.telegram.Authentication
@@ -89,7 +91,7 @@ class ConnService : ParaboxService() {
         val quoteMsgId = dto.contents.firstOrNull { it is QuoteReply }?.let {
             (it as QuoteReply).quoteMessageId
         }
-        val chatId = "-${dto.pluginConnection.id}".toLong()
+        val chatId = dto.pluginConnection.id.toChatId()
         return dto.contents.all {
             val tdMessageContent = when (it) {
                 is PlainText -> {
@@ -137,6 +139,7 @@ class ConnService : ParaboxService() {
     ): Boolean {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d("ConnService", "sendSingleMessage: $chatId, $tdMessageContent, $replyToMessageId")
                 client.sendMessage(
                     chatId = chatId,
                     inputMessageContent = tdMessageContent,
@@ -220,7 +223,7 @@ class ConnService : ParaboxService() {
                             it1
                         )
                     },
-                    id = Math.abs(it.id),
+                    id = it.id.fromChatId(),
                     avatar = null
                 )
             }
@@ -232,7 +235,7 @@ class ConnService : ParaboxService() {
                             it1
                         )
                     },
-                    id = Math.abs(it.id),
+                    id = it.id.fromChatId(),
                     avatar = null,
                 )
             }
@@ -244,10 +247,11 @@ class ConnService : ParaboxService() {
             val pluginConnection = PluginConnection(
                 connectionType = connectionType,
                 sendTargetType = type,
-                Math.abs(chat.id)
+                chat.id.fromChatId()
             )
 
             if (senderId == client.currentUser?.id) {
+                if(obj.message.sendingState != null) return@launch
                 val dto = SendMessageDto(
                     contents = contents,
                     timestamp = obj.message.date.toLong() * 1000,

@@ -13,12 +13,10 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import org.apache.commons.io.FileUtils
 import javax.inject.Inject
 import org.drinkless.td.libcore.telegram.*
 import org.drinkless.td.libcore.telegram.TdApi.Chat
 import org.drinkless.td.libcore.telegram.TdApi.MessageAnimatedEmoji
-import org.drinkless.td.libcore.telegram.TdApi.MessageAnimation
 import org.drinkless.td.libcore.telegram.TdApi.MessageSticker
 import org.drinkless.td.libcore.telegram.TdApi.StorageStatistics
 import java.io.File
@@ -129,10 +127,10 @@ class TelegramClient @Inject constructor(
         }
     }
 
-    fun loginOut() {
-        Log.d(TAG, "loginOut called")
+    fun logOut() {
+        Log.d(TAG, "logOut called")
         client.send(TdApi.LogOut()) {
-            Log.d(TAG, "loginOut result: $it")
+            Log.d(TAG, "logOut result: $it")
             when (it.constructor) {
                 TdApi.Ok.CONSTRUCTOR -> {
                     //result.postValue(true)

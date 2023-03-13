@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ojhdtapp.parabox.extension.telegram.MainActivity
 import com.ojhdtapp.parabox.extension.telegram.R
+import com.ojhdtapp.parabox.extension.telegram.core.util.BrowserUtil
 import com.ojhdtapp.parabox.extension.telegram.domain.util.ServiceStatus
 import com.ojhdtapp.parabox.extension.telegram.ui.util.NormalPreference
 import com.ojhdtapp.parabox.extension.telegram.ui.util.PreferencesCategory
@@ -104,6 +105,20 @@ fun MainScreen(
                                         contentDescription = "stop service"
                                     )
                                 })
+                            if(viewModel.loginState.value != LoginState.Unauthenticated){
+                                DropdownMenuItem(
+                                    text = { Text(text = "登出当前账号") },
+                                    onClick = {
+                                        viewModel.logOut()
+                                        menuExpanded = false
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Logout,
+                                            contentDescription = "stop service"
+                                        )
+                                    })
+                            }
                         }
                     }
                 },
@@ -181,6 +196,28 @@ fun MainScreen(
                     checked = viewModel.foregroundServiceSwitchFlow.collectAsState(initial = true).value,
                     onCheckedChange = viewModel::setForegroundServiceSwitch
                 )
+            }
+            item{
+                NormalPreference(
+                    title = "清理缓存",
+                    subtitle = "清理 TDLib 产生的文件缓存"
+                ) {
+                    viewModel.optimiseStorage()
+                }
+            }
+            item {
+                PreferencesCategory(text = "关于")
+            }
+            item {
+                NormalPreference(
+                    title = "版本",
+                    subtitle = viewModel.appVersion
+                ) {
+                    BrowserUtil.launchURL(
+                        context,
+                        "https://github.com/Parabox-App/parabox-extension-telegram"
+                    )
+                }
             }
         }
     }
