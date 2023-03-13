@@ -8,9 +8,27 @@ import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import com.ojhdtapp.parabox.extension.telegram.BuildConfig
 import java.io.File
+import java.io.FileOutputStream
 import java.text.DecimalFormat
+import java.text.SimpleDateFormat
+import java.util.*
 
 object FileUtil {
+
+    fun copyUriToFile(context: Context, uri: Uri, path: File): File? {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                FileOutputStream(path).use { outputStream ->
+                    inputStream.copyTo(outputStream, DEFAULT_BUFFER_SIZE)
+                }
+            }
+            path
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     fun getUriOfFile(context: Context, file: File): Uri? {
         return try {
             FileProvider.getUriForFile(
@@ -98,5 +116,12 @@ object FileUtil {
             in 1048576 until 1073741824 -> "${format.format(size.toDouble() / 1048576)}MB"
             else -> "${format.format(size.toDouble() / 1073741824)}GB"
         }
+    }
+
+    fun Long.toDateAndTimeString(): String {
+        return SimpleDateFormat(
+            "yyyy-MM-dd-HH-mm-ss-",
+            Locale.getDefault()
+        ).format(Date(this)) + this.toString().substring(11)
     }
 }

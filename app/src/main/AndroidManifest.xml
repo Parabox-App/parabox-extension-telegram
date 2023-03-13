@@ -28,10 +28,10 @@
         <meta-data android:name="description" android:value="Telegram login and messaging"/>
         <meta-data android:name="plain_text_support" android:value="2"/>
         <meta-data android:name="image_support" android:value="2"/>
-        <meta-data android:name="audio_support" android:value="0"/>
-        <meta-data android:name="file_support" android:value="0"/>
+        <meta-data android:name="audio_support" android:value="2"/>
+        <meta-data android:name="file_support" android:value="2"/>
         <meta-data android:name="at_support" android:value="0"/>
-        <meta-data android:name="quote_reply_support" android:value="0"/>
+        <meta-data android:name="quote_reply_support" android:value="1"/>
 
         <service
             android:name="com.ojhdtapp.parabox.extension.telegram.domain.service.ConnService"

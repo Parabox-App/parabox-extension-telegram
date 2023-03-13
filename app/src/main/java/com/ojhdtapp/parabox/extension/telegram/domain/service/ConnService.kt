@@ -17,6 +17,8 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.SendTargetType
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
+import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil
+import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil.toDateAndTimeString
 import com.ojhdtapp.parabox.extension.telegram.core.util.IdUtil.fromChatId
 import com.ojhdtapp.parabox.extension.telegram.core.util.IdUtil.toChatId
 import com.ojhdtapp.parabox.extension.telegram.core.util.NotificationUtil
@@ -35,6 +37,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.apache.commons.io.FileUtils
 import org.drinkless.td.libcore.telegram.TdApi
 import org.drinkless.td.libcore.telegram.TdApi.Audio
 import org.drinkless.td.libcore.telegram.TdApi.ChatType
@@ -45,6 +48,7 @@ import org.drinkless.td.libcore.telegram.TdApi.ChatTypeSupergroup
 import org.drinkless.td.libcore.telegram.TdApi.MessageSender
 import org.drinkless.td.libcore.telegram.TdApi.MessageSenderChat
 import org.drinkless.td.libcore.telegram.TdApi.MessageSenderUser
+import java.io.File
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -102,8 +106,12 @@ class ConnService : ParaboxService() {
                     )
                 }
                 is Image -> {
+                    val path = File(this.externalCacheDir, it.fileName
+                        ?: FileUtil.getFilenameFromUri(this, it.uri!!)
+                        ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png")
+                    val tempPath = FileUtil.copyUriToFile(this, it.uri!!, path)
                     TdApi.InputMessagePhoto(
-                        TdApi.InputFileLocal(it.uri!!.path!!),
+                        TdApi.InputFileLocal(tempPath!!.absolutePath),
                         null,
                         intArrayOf(),
                         it.width,
@@ -113,8 +121,12 @@ class ConnService : ParaboxService() {
                     )
                 }
                 is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
+                    val path = File(this.externalCacheDir, it.fileName
+                        ?: FileUtil.getFilenameFromUri(this, it.uri!!)
+                        ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3")
+                    val tempPath = FileUtil.copyUriToFile(this, it.uri!!, path)
                     TdApi.InputMessageVoiceNote(
-                        TdApi.InputFileLocal(it.uri!!.path!!),
+                        TdApi.InputFileLocal(tempPath!!.absolutePath),
                         (it.length / 1000).toInt(),
                         null,
                         null
