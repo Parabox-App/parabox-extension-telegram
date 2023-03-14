@@ -19,4 +19,16 @@
     <string name="test_send_message">发送测试消息</string>
     <string name="command_success_toast">命令已发送，返回信息：%1$s</string>
     <string name="command_failed_toast">命令发送失败，错误码：%1$s</string>
+    <string name="optimise_storage">缓存清理完成。目前占用%1$s</string>
+    <string name="log_out_success">账号已登出</string>
+    <string name="log_out_fail">登出失败</string>
+    <string name="log_out">登出当前账号</string>
+    <string name="optimise_storage_title">清理缓存</string>
+    <string name="optimise_storage_subtitle">清理 TDLib 产生的文件缓存</string>
+    <string name="about">关于</string>
+    <string name="version">版本</string>
+    <string name="insert_phone">请输入手机号</string>
+    <string name="confirm">确认</string>
+    <string name="insert_code">请输入验证码</string>
+    <string name="insert_password">请输入密码</string>
 </resources>

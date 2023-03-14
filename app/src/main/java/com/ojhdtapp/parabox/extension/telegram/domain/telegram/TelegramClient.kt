@@ -63,6 +63,10 @@ class TelegramClient @Inject constructor(
         client.close()
     }
 
+    fun getCurrentUser(){
+        client.send(TdApi.GetMe()) { _currentUser = (it as TdApi.User)}
+    }
+
     private val requestScope = CoroutineScope(Dispatchers.IO)
 
     private fun setAuth(auth: Authentication) {
@@ -83,7 +87,7 @@ class TelegramClient @Inject constructor(
                     Log.d(TAG, "SetTdlibParameters result: $it")
                     when (it.constructor) {
                         TdApi.Ok.CONSTRUCTOR -> {
-                            client.send(TdApi.GetMe()) { _currentUser = (it as TdApi.User)}
+                            getCurrentUser()
                         }
                         TdApi.Error.CONSTRUCTOR -> {
                             //result.postValue(false)
@@ -127,19 +131,21 @@ class TelegramClient @Inject constructor(
         }
     }
 
-    fun logOut() {
-        Log.d(TAG, "logOut called")
-        client.send(TdApi.LogOut()) {
-            Log.d(TAG, "logOut result: $it")
-            when (it.constructor) {
-                TdApi.Ok.CONSTRUCTOR -> {
-                    //result.postValue(true)
-                }
-                TdApi.Error.CONSTRUCTOR -> {
-                    //result.postValue(false)
+    suspend fun logOut(): Boolean {
+        return suspendCoroutine<Boolean> { cot ->
+            client.send(TdApi.LogOut()) {
+                Log.d(TAG, "logOut result: $it")
+                when (it.constructor) {
+                    TdApi.Ok.CONSTRUCTOR -> {
+                        cot.resume(true)
+                    }
+                    else -> {
+                        cot.resume(false)
+                    }
                 }
             }
         }
+
     }
 
     suspend fun optimiseStorage(): StorageStatistics {

@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ojhdtapp.parabox.extension.telegram.BuildConfig
+import com.ojhdtapp.parabox.extension.telegram.R
 import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil
 import com.ojhdtapp.parabox.extension.telegram.core.util.dataStore
@@ -53,7 +54,7 @@ class MainViewModel @Inject constructor(
             if (serviceStatusStateFlow.value.message == "") {
                 _serviceStatusStateFlow.emit(value)
             } else {
-                if(value::class.java != serviceStatusStateFlow.value::class.java){
+                if (value::class.java != serviceStatusStateFlow.value::class.java) {
                     _serviceStatusStateFlow.emit(value)
                 }
             }
@@ -153,18 +154,33 @@ class MainViewModel @Inject constructor(
         client.insertPassword(password)
     }
 
-    fun optimiseStorage(){
+    fun optimiseStorage() {
         viewModelScope.launch {
             val sizeString = FileUtil.getSizeString(client.optimiseStorage().size)
-            _uiEventFlow.emit(UiEvent.ShowSnackbar(
-                "缓存清理完成。目前占用${sizeString}"
-            ))
+            _uiEventFlow.emit(
+                UiEvent.ShowSnackbar(
+                    context.getString(R.string.optimise_storage, sizeString)
+                )
+            )
         }
     }
 
-    fun logOut(){
+    fun logOut() {
         viewModelScope.launch {
-            client.logOut()
+            if (client.logOut()) {
+                _uiEventFlow.emit(
+                    UiEvent.ShowSnackbar(
+                        context.getString(R.string.log_out_success)
+                    )
+                )
+            } else {
+                _uiEventFlow.emit(
+                    UiEvent.ShowSnackbar(
+                        context.getString(R.string.log_out_fail)
+                    )
+                )
+            }
+
         }
     }
 

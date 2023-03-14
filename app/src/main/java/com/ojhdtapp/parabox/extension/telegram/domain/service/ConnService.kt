@@ -18,6 +18,7 @@ import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.PlainText
 import com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.getContentString
 import com.ojhdtapp.parabox.extension.telegram.core.util.DataStoreKeys
 import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil
+import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil.getExtension
 import com.ojhdtapp.parabox.extension.telegram.core.util.FileUtil.toDateAndTimeString
 import com.ojhdtapp.parabox.extension.telegram.core.util.IdUtil.fromChatId
 import com.ojhdtapp.parabox.extension.telegram.core.util.IdUtil.toChatId
@@ -96,7 +97,8 @@ class ConnService : ParaboxService() {
             (it as QuoteReply).quoteMessageId
         }
         val chatId = dto.pluginConnection.id.toChatId()
-        return dto.contents.all {
+        Log.d("onSendMessage", "messageContent: ${dto.contents}")
+        return dto.contents.filterNot { it is QuoteReply }.all {
             val tdMessageContent = when (it) {
                 is PlainText -> {
                     TdApi.InputMessageText(
@@ -106,29 +108,56 @@ class ConnService : ParaboxService() {
                     )
                 }
                 is Image -> {
-                    val path = File(this.externalCacheDir, it.fileName
+                    val fileName = it.fileName
                         ?: FileUtil.getFilenameFromUri(this, it.uri!!)
-                        ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png")
+                        ?: "Image_${System.currentTimeMillis().toDateAndTimeString()}.png"
+                    val path = File(this.externalCacheDir, fileName)
                     val tempPath = FileUtil.copyUriToFile(this, it.uri!!, path)
-                    TdApi.InputMessagePhoto(
-                        TdApi.InputFileLocal(tempPath!!.absolutePath),
-                        null,
-                        intArrayOf(),
-                        it.width,
-                        it.height,
-                        null,
-                        0
-                    )
+                    if (fileName.getExtension() == "gif") {
+                        TdApi.InputMessageAnimation(
+                            TdApi.InputFileLocal(tempPath!!.absolutePath),
+                            null,
+                            intArrayOf(),
+                            0,
+                            it.width,
+                            it.height,
+                            null,
+                        )
+                    } else {
+                        TdApi.InputMessagePhoto(
+                            TdApi.InputFileLocal(tempPath!!.absolutePath),
+                            null,
+                            intArrayOf(),
+                            it.width,
+                            it.height,
+                            null,
+                            0
+                        )
+                    }
                 }
                 is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.Audio -> {
-                    val path = File(this.externalCacheDir, it.fileName
-                        ?: FileUtil.getFilenameFromUri(this, it.uri!!)
-                        ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3")
+                    val path = File(
+                        this.externalCacheDir, it.fileName
+                            ?: FileUtil.getFilenameFromUri(this, it.uri!!)
+                            ?: "Audio_${System.currentTimeMillis().toDateAndTimeString()}.mp3"
+                    )
                     val tempPath = FileUtil.copyUriToFile(this, it.uri!!, path)
                     TdApi.InputMessageVoiceNote(
                         TdApi.InputFileLocal(tempPath!!.absolutePath),
                         (it.length / 1000).toInt(),
                         null,
+                        null
+                    )
+                }
+                is com.ojhdtapp.paraboxdevelopmentkit.messagedto.message_content.File -> {
+                    val path = File(
+                        this.externalCacheDir, it.name
+                    )
+                    val tempPath = FileUtil.copyUriToFile(this, it.uri!!, path)
+                    TdApi.InputMessageDocument(
+                        TdApi.InputFileLocal(tempPath!!.absolutePath),
+                        null,
+                        false,
                         null
                     )
                 }
@@ -151,7 +180,10 @@ class ConnService : ParaboxService() {
     ): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                Log.d("ConnService", "sendSingleMessage: $chatId, $tdMessageContent, $replyToMessageId")
+                Log.d(
+                    "ConnService",
+                    "sendSingleMessage: $chatId, $tdMessageContent, $replyToMessageId"
+                )
                 client.sendMessage(
                     chatId = chatId,
                     inputMessageContent = tdMessageContent,
@@ -215,6 +247,9 @@ class ConnService : ParaboxService() {
     }
 
     private fun handleNewMessage(obj: TdApi.UpdateNewMessage) {
+        if(client.currentUser == null){
+            client.getCurrentUser()
+        }
         Log.d("parabox", obj.toString())
         lifecycleScope.launch(Dispatchers.IO) {
             val contents = client.getParaboxMessageContents(obj.message)
@@ -263,7 +298,7 @@ class ConnService : ParaboxService() {
             )
 
             if (senderId == client.currentUser?.id) {
-                if(obj.message.sendingState != null) return@launch
+                if (obj.message.sendingState != null) return@launch
                 val dto = SendMessageDto(
                     contents = contents,
                     timestamp = obj.message.date.toLong() * 1000,

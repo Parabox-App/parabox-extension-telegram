@@ -124,4 +124,8 @@ object FileUtil {
             Locale.getDefault()
         ).format(Date(this)) + this.toString().substring(11)
     }
+
+    fun String.getExtension(): String {
+        return substringAfterLast(".")
+    }
 }

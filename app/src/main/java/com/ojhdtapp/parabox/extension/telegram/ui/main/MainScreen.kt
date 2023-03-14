@@ -107,7 +107,7 @@ fun MainScreen(
                                 })
                             if(viewModel.loginState.value != LoginState.Unauthenticated){
                                 DropdownMenuItem(
-                                    text = { Text(text = "登出当前账号") },
+                                    text = { Text(text = stringResource(R.string.log_out)) },
                                     onClick = {
                                         viewModel.logOut()
                                         menuExpanded = false
@@ -199,18 +199,18 @@ fun MainScreen(
             }
             item{
                 NormalPreference(
-                    title = "清理缓存",
-                    subtitle = "清理 TDLib 产生的文件缓存"
+                    title = stringResource(R.string.optimise_storage_title),
+                    subtitle = stringResource(R.string.optimise_storage_subtitle)
                 ) {
                     viewModel.optimiseStorage()
                 }
             }
             item {
-                PreferencesCategory(text = "关于")
+                PreferencesCategory(text = stringResource(R.string.about))
             }
             item {
                 NormalPreference(
-                    title = "版本",
+                    title = stringResource(R.string.version),
                     subtitle = viewModel.appVersion
                 ) {
                     BrowserUtil.launchURL(
@@ -397,6 +397,9 @@ fun InsertNumberBlock(
     var input by remember {
         mutableStateOf("")
     }
+    var countryCode by remember{
+        mutableStateOf("")
+    }
     ElevatedCard(
         modifier = modifier,
         shape = RoundedCornerShape(32.dp),
@@ -417,10 +420,20 @@ fun InsertNumberBlock(
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(text = "请输入手机号", style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
+                Text(text = stringResource(R.string.insert_phone), style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    modifier = Modifier
+                        .width(96.dp)
+                        .padding(end = 8.dp)
+                        .clearFocusOnKeyboardDismiss(),
+                    value = countryCode, onValueChange = { countryCode = it },
+                    singleLine = true,
+                    placeholder = { Text(text = "+1") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                )
                 OutlinedTextField(
                     modifier = Modifier
                         .weight(1f)
@@ -431,10 +444,10 @@ fun InsertNumberBlock(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 )
                 Button(
-                    onClick = { viewModel.insertPhoneNumber(input) },
-                    enabled = input.isNotEmpty()
+                    onClick = { viewModel.insertPhoneNumber("${countryCode}${input}") },
+                    enabled = input.isNotEmpty() && countryCode.isNotEmpty(),
                 ) {
-                    Text(text = "确认")
+                    Text(text = stringResource(R.string.confirm))
                 }
             }
 
@@ -490,7 +503,7 @@ fun InsertCodeBlock(
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(text = "请输入验证码", style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
+                Text(text = stringResource(R.string.insert_code), style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -507,7 +520,7 @@ fun InsertCodeBlock(
                     onClick = { viewModel.insertCode(input) },
                     enabled = input.length == 5
                 ) {
-                    Text(text = "确认")
+                    Text(text = stringResource(id = R.string.confirm))
                 }
             }
 
@@ -547,7 +560,7 @@ fun InsertPasswordBlock(
                     )
                 }
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(text = "请输入密码", style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
+                Text(text = stringResource(R.string.insert_password), style = MaterialTheme.typography.titleLarge, fontSize = 20.sp)
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -564,7 +577,7 @@ fun InsertPasswordBlock(
                     onClick = { viewModel.insertPassword(input) },
                     enabled = input.isNotEmpty()
                 ) {
-                    Text(text = "确认")
+                    Text(text = stringResource(id = R.string.confirm))
                 }
             }
 
