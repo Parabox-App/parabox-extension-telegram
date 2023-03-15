@@ -30,4 +30,5 @@
     <string name="confirm">Confirm</string>
     <string name="insert_code">Please enter verification code</string>
     <string name="insert_password">Please enter password</string>
+    <string name="logining">Trying to log in</string>
 </resources>

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.Message
 import android.util.Log
 import androidx.lifecycle.lifecycleScope
+import com.ojhdtapp.parabox.extension.telegram.R
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxKey
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxMetadata
 import com.ojhdtapp.paraboxdevelopmentkit.connector.ParaboxResult
@@ -210,16 +211,16 @@ class ConnService : ParaboxService() {
                 Log.d("ConnService", "authState: $it")
                 when (it) {
                     Authentication.UNAUTHENTICATED, Authentication.UNKNOWN -> {
-                        updateServiceState(ParaboxKey.STATE_LOADING, "正在尝试登录")
+                        updateServiceState(ParaboxKey.STATE_LOADING, getString(R.string.logining))
                     }
                     Authentication.WAIT_FOR_NUMBER -> {
-                        updateServiceState(ParaboxKey.STATE_PAUSE, "请输入手机号码")
+                        updateServiceState(ParaboxKey.STATE_PAUSE, getString(R.string.insert_phone))
                     }
                     Authentication.WAIT_FOR_CODE -> {
-                        updateServiceState(ParaboxKey.STATE_PAUSE, "请输入验证码")
+                        updateServiceState(ParaboxKey.STATE_PAUSE, getString(R.string.insert_code))
                     }
                     Authentication.WAIT_FOR_PASSWORD -> {
-                        updateServiceState(ParaboxKey.STATE_PAUSE, "请输入密码")
+                        updateServiceState(ParaboxKey.STATE_PAUSE, getString(R.string.insert_password))
                     }
                     Authentication.AUTHENTICATED -> {
                         updateServiceState(ParaboxKey.STATE_RUNNING, "TDLib 1.8.0")
